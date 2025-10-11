@@ -929,6 +929,46 @@ impl Copilot {
         })
     }
 
+    pub fn request_inline_edit<T>(
+        &mut self,
+        buffer: &Entity<Buffer>,
+        position: T,
+        cx: &mut Context<Self>,
+    ) -> Task<Result<request::CopilotInlineEditResult>>
+    where
+        T: ToPointUtf16,
+    {
+        self.register_buffer(buffer, cx);
+
+        let server = match self.server.as_authenticated() {
+            Ok(server) => server,
+            Err(error) => return Task::ready(Err(error)),
+        };
+        let lsp = server.lsp.clone();
+        let registered_buffer = server
+            .registered_buffers
+            .get_mut(&buffer.entity_id())
+            .unwrap();
+        let snapshot = registered_buffer.report_changes(buffer, cx);
+        let buffer = buffer.read(cx);
+        let uri = registered_buffer.uri.clone();
+        let position = position.to_point_utf16(buffer);
+
+        cx.background_spawn(async move {
+            let (version, _snapshot) = snapshot.await?;
+            let result = lsp
+                .request::<request::CopilotInlineEdit>(request::CopilotInlineEditParams {
+                    text_document: lsp::TextDocumentIdentifier { uri },
+                    position: point_to_lsp(position),
+                    version: Some(version.try_into().unwrap()),
+                })
+                .await
+                .into_response()
+                .context("copilot: get inline edit")?;
+            anyhow::Ok(result)
+        })
+    }
+
     fn request_completions<R, T>(
         &mut self,
         buffer: &Entity<Buffer>,
@@ -1234,6 +1274,7 @@ async fn get_copilot_lsp(fs: Arc<dyn Fs>, node_runtime: NodeRuntime) -> anyhow::
 #[cfg(test)]
 mod tests {
     use super::*;
+    use futures::StreamExt;
     use gpui::TestAppContext;
     use util::{path, paths::PathStyle, rel_path::rel_path};
 
@@ -1451,6 +1492,107 @@ mod tests {
         fn load_bytes(&self, _cx: &App) -> Task<Result<Vec<u8>>> {
             unimplemented!()
         }
+    }
+
+    #[gpui::test]
+    async fn test_inline_edit_request(cx: &mut TestAppContext) {
+        let (copilot, mut lsp) = Copilot::fake(cx);
+
+        let buffer = cx.new(|cx| Buffer::local("fn main() {\n    println!(\"Hello\");\n}", cx));
+        let buffer_uri: lsp::Uri = format!("buffer://{}", buffer.entity_id().as_u64())
+            .parse()
+            .unwrap();
+
+        copilot.update(cx, |copilot, cx| copilot.register_buffer(&buffer, cx));
+
+        // Consume the DidOpenTextDocument notification
+        lsp.receive_notification::<lsp::notification::DidOpenTextDocument>()
+            .await;
+
+        // Set up request handler to respond to inline edit requests
+        let buffer_uri_clone = buffer_uri.clone();
+        let mut request_handler =
+            lsp.set_request_handler::<request::CopilotInlineEdit, _, _>(move |_params, _cx| {
+                let uri = buffer_uri_clone.clone();
+                async move {
+                    Ok(request::CopilotInlineEditResult {
+                        edits: vec![request::CopilotInlineEditItem {
+                            text_document: lsp::TextDocumentIdentifier { uri: uri.clone() },
+                            range: lsp::Range::new(
+                                lsp::Position::new(0, 0),
+                                lsp::Position::new(0, 8),
+                            ),
+                            text: "fn main()".to_string(),
+                            command: None,
+                        }],
+                    })
+                }
+            });
+
+        let result = copilot
+            .update(cx, |copilot, cx| {
+                copilot.request_inline_edit(&buffer, PointUtf16::new(0, 0), cx)
+            })
+            .await
+            .unwrap();
+
+        // Wait for the request to be handled
+        request_handler.next().await;
+
+        assert_eq!(result.edits.len(), 1);
+        assert_eq!(result.edits[0].text_document.uri, buffer_uri);
+        assert_eq!(result.edits[0].text, "fn main()");
+    }
+
+    #[test]
+    fn test_inline_edit_serde() {
+        // Test serialization of request
+        let request_params = request::CopilotInlineEditParams {
+            text_document: lsp::TextDocumentIdentifier {
+                uri: "file:///test.rs".parse().unwrap(),
+            },
+            position: lsp::Position::new(1, 5),
+            version: Some(42),
+        };
+        let json = serde_json::to_string(&request_params).unwrap();
+        assert!(json.contains("textDocument"));
+        assert!(json.contains("position"));
+        assert!(json.contains("version"));
+
+        // Test deserialization of response
+        let response_json = r#"{
+            "edits": [
+                {
+                    "textDocument": {"uri": "file:///test.rs"},
+                    "range": {
+                        "start": {"line": 0, "character": 0},
+                        "end": {"line": 0, "character": 10}
+                    },
+                    "text": "old code",
+                }
+            ]
+        }"#;
+        let response: request::CopilotInlineEditResult =
+            serde_json::from_str(response_json).unwrap();
+        assert_eq!(response.edits.len(), 1);
+        assert_eq!(response.edits[0].text, "old code");
+
+        // Test with optional fields missing
+        let minimal_response_json = r#"{
+            "edits": [
+                {
+                    "textDocument": {"uri": "file:///test.rs"},
+                    "range": {
+                        "start": {"line": 0, "character": 0},
+                        "end": {"line": 0, "character": 10}
+                    },
+                    "text": "code"
+                }
+            ]
+        }"#;
+        let minimal_response: request::CopilotInlineEditResult =
+            serde_json::from_str(minimal_response_json).unwrap();
+        assert_eq!(minimal_response.edits[0].command, None);
     }
 }
 

@@ -223,3 +223,43 @@ impl lsp::request::Request for NotifyRejected {
     type Result = String;
     const METHOD: &'static str = "notifyRejected";
 }
+
+pub enum CopilotInlineEdit {}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CopilotInlineEditParams {
+    pub text_document: lsp::TextDocumentIdentifier,
+    pub position: lsp::Position,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub version: Option<usize>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CopilotInlineEditResult {
+    pub edits: Vec<CopilotInlineEditItem>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CopilotInlineEditItem {
+    pub text_document: lsp::TextDocumentIdentifier,
+    pub range: lsp::Range,
+    pub text: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub command: Option<CopilotEditCommand>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CopilotEditCommand {
+    pub title: String,
+    pub command: String,
+}
+
+impl lsp::request::Request for CopilotInlineEdit {
+    type Params = CopilotInlineEditParams;
+    type Result = CopilotInlineEditResult;
+    const METHOD: &'static str = "textDocument/copilotInlineEdit";
+}
