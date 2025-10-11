@@ -1,5 +1,6 @@
 pub mod copilot_chat;
 mod copilot_completion_provider;
+mod copilot_nes_provider;
 pub mod request;
 mod sign_in;
 
@@ -46,6 +47,7 @@ use util::{ResultExt, fs::remove_matching};
 use workspace::Workspace;
 
 pub use crate::copilot_completion_provider::CopilotCompletionProvider;
+pub use crate::copilot_nes_provider::CopilotNesProvider;
 pub use crate::sign_in::{CopilotCodeVerification, initiate_sign_in, reinstall_and_sign_in};
 
 actions!(
