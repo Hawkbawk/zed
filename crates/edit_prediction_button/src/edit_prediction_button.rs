@@ -79,7 +79,7 @@ impl Render for EditPredictionButton {
         match all_language_settings.edit_predictions.provider {
             EditPredictionProvider::None => div(),
 
-            EditPredictionProvider::Copilot => {
+            EditPredictionProvider::Copilot | EditPredictionProvider::CopilotNes => {
                 let Some(copilot) = Copilot::global(cx) else {
                     return div();
                 };
@@ -492,6 +492,7 @@ impl EditPredictionButton {
             provider,
             EditPredictionProvider::Zed
                 | EditPredictionProvider::Copilot
+                | EditPredictionProvider::CopilotNes
                 | EditPredictionProvider::Supermaven
         ) {
             menu = menu
@@ -686,9 +687,34 @@ impl EditPredictionButton {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> Entity<ContextMenu> {
+        let current_provider = all_language_settings(None, cx).edit_predictions.provider;
         ContextMenu::build(window, cx, |menu, window, cx| {
-            self.build_language_settings_menu(menu, window, cx)
-                .separator()
+            let mut menu = self.build_language_settings_menu(menu, window, cx);
+
+            // Add provider variant switching options
+            if current_provider == EditPredictionProvider::Copilot {
+                menu = menu
+                    .separator()
+                    .entry("Use Copilot Next Edit Suggestions", None, {
+                        let fs = self.fs.clone();
+                        move |_window, cx| {
+                            set_completion_provider(
+                                fs.clone(),
+                                cx,
+                                EditPredictionProvider::CopilotNes,
+                            )
+                        }
+                    });
+            } else if current_provider == EditPredictionProvider::CopilotNes {
+                menu = menu.separator().entry("Use Copilot Completions", None, {
+                    let fs = self.fs.clone();
+                    move |_window, cx| {
+                        set_completion_provider(fs.clone(), cx, EditPredictionProvider::Copilot)
+                    }
+                });
+            }
+
+            menu.separator()
                 .entry("Use Zed AI instead", None, {
                     let fs = self.fs.clone();
                     move |_window, cx| {

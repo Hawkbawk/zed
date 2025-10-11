@@ -1,6 +1,6 @@
 use client::{Client, UserStore};
 use collections::HashMap;
-use copilot::{Copilot, CopilotCompletionProvider};
+use copilot::{Copilot, CopilotCompletionProvider, CopilotNesProvider};
 use editor::Editor;
 use gpui::{AnyWindowHandle, App, AppContext as _, Context, Entity, WeakEntity};
 use language::language_settings::{EditPredictionProvider, all_language_settings};
@@ -181,6 +181,21 @@ fn assign_edit_prediction_provider(
                 }
                 let provider = cx.new(|_| CopilotCompletionProvider::new(copilot));
                 editor.set_edit_prediction_provider(Some(provider), window, cx);
+            }
+        }
+        EditPredictionProvider::CopilotNes => {
+            if let Some(copilot) = Copilot::global(cx) {
+                if let Some(buffer) = singleton_buffer
+                    && buffer.read(cx).file().is_some()
+                {
+                    copilot.update(cx, |copilot, cx| {
+                        copilot.register_buffer(&buffer, cx);
+                    });
+                }
+                if let Some(project) = editor.project() {
+                    let provider = cx.new(|_| CopilotNesProvider::new(copilot, project.clone()));
+                    editor.set_edit_prediction_provider(Some(provider), window, cx);
+                }
             }
         }
         EditPredictionProvider::Supermaven => {

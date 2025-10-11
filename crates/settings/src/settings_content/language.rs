@@ -80,6 +80,7 @@ pub enum EditPredictionProvider {
     None,
     #[default]
     Copilot,
+    CopilotNes,
     Supermaven,
     Zed,
 }
@@ -90,6 +91,7 @@ impl EditPredictionProvider {
             EditPredictionProvider::Zed => true,
             EditPredictionProvider::None
             | EditPredictionProvider::Copilot
+            | EditPredictionProvider::CopilotNes
             | EditPredictionProvider::Supermaven => false,
         }
     }

@@ -12,6 +12,7 @@ pub const COPILOT_NES_THROTTLE_TIMEOUT: Duration = Duration::from_millis(300);
 
 pub struct CopilotNesProvider {
     copilot: Entity<Copilot>,
+    #[allow(dead_code)] // Reserved for future cross-file support
     project: Entity<Project>,
     buffer_id: Option<EntityId>,
     edits: Vec<CopilotInlineEditItem>,

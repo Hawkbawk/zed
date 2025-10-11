@@ -4,7 +4,7 @@
 
 **Goal:** Add support for GitHub Copilot's Next Edit Suggestions (NES) feature via the `textDocument/copilotInlineEdit` LSP message to the copilot-language-server.
 
-**Status:** Phase 2 Complete ✅ - See [30124_phase2_summary.md](./30124_phase2_summary.md) for implementation details.
+**Status:** Phase 3 Complete ✅ - See [30124_phase3_summary.md](./30124_phase3_summary.md) for implementation details.
 
 ## Background
 
@@ -305,11 +305,11 @@ This is a major advantage over VSCode's implementation.
 - [x] Implement `cycle()`, `accept()`, `discard()`
 - [x] Write provider unit tests
 
-### Phase 3: Integration (1-2 days)
-- [ ] Add `copilot-nes` to `EditPredictionProvider` enum
-- [ ] Update provider factory/registration
-- [ ] Update settings UI to include Copilot NES option
-- [ ] Wire up provider in editor initialization
+### Phase 3: Integration (1-2 days) ✅ COMPLETE
+- [x] Add `copilot-nes` to `EditPredictionProvider` enum
+- [x] Update provider factory/registration
+- [x] Update settings UI to include Copilot NES option
+- [x] Wire up provider in editor initialization
 
 ### Phase 4: Testing & Polish (2-3 days)
 - [ ] Integration tests with mock LSP server
