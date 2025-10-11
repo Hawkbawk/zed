@@ -960,7 +960,7 @@ impl Copilot {
             let (version, _snapshot) = snapshot.await?;
             let result = lsp
                 .request::<request::CopilotInlineEdit>(request::CopilotInlineEditParams {
-                    text_document: lsp::TextDocumentIdentifier { uri },
+                    text_document: lsp::VersionedTextDocumentIdentifier::new(uri, version),
                     position: point_to_lsp(position),
                     version: Some(version.try_into().unwrap()),
                 })
@@ -1550,8 +1550,9 @@ mod tests {
     fn test_inline_edit_serde() {
         // Test serialization of request
         let request_params = request::CopilotInlineEditParams {
-            text_document: lsp::TextDocumentIdentifier {
+            text_document: lsp::VersionedTextDocumentIdentifier {
                 uri: "file:///test.rs".parse().unwrap(),
+                version: 1,
             },
             position: lsp::Position::new(1, 5),
             version: Some(42),

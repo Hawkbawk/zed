@@ -229,7 +229,7 @@ pub enum CopilotInlineEdit {}
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CopilotInlineEditParams {
-    pub text_document: lsp::TextDocumentIdentifier,
+    pub text_document: lsp::VersionedTextDocumentIdentifier,
     pub position: lsp::Position,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub version: Option<usize>,
