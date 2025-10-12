@@ -231,8 +231,6 @@ pub struct CopilotInlineEditItem {
     pub text_document: lsp::TextDocumentIdentifier,
     pub range: lsp::Range,
     pub text: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub command: Option<CopilotEditCommand>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

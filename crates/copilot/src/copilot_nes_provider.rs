@@ -345,7 +345,6 @@ mod tests {
                     },
                     range: lsp::Range::new(lsp::Position::new(0, 0), lsp::Position::new(0, 10)),
                     text: "edit1".to_string(),
-                    command: None,
                 },
                 CopilotInlineEditItem {
                     text_document: lsp::TextDocumentIdentifier {
@@ -353,7 +352,6 @@ mod tests {
                     },
                     range: lsp::Range::new(lsp::Position::new(5, 0), lsp::Position::new(5, 10)),
                     text: "edit2".to_string(),
-                    command: None,
                 },
                 CopilotInlineEditItem {
                     text_document: lsp::TextDocumentIdentifier {
@@ -361,7 +359,6 @@ mod tests {
                     },
                     range: lsp::Range::new(lsp::Position::new(10, 0), lsp::Position::new(10, 10)),
                     text: "edit3".to_string(),
-                    command: None,
                 },
             ];
             provider.active_edit_index = 0;
@@ -434,7 +431,6 @@ mod tests {
                 },
                 range: lsp::Range::new(lsp::Position::new(0, 0), lsp::Position::new(0, 10)),
                 text: "edit1".to_string(),
-                command: None,
             }];
             provider.buffer_id = Some(buffer_id);
         });
@@ -458,7 +454,6 @@ mod tests {
                 },
                 range: lsp::Range::new(lsp::Position::new(0, 0), lsp::Position::new(0, 10)),
                 text: "edit1".to_string(),
-                command: None,
             }];
             provider.buffer_id = Some(buffer_id);
         });

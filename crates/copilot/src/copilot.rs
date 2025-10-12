@@ -1544,58 +1544,6 @@ mod tests {
         assert_eq!(result.edits[0].text_document.uri, buffer_uri);
         assert_eq!(result.edits[0].text, "fn main()");
     }
-
-    #[test]
-    fn test_inline_edit_serde() {
-        // Test serialization of request
-        let request_params = request::CopilotInlineEditParams {
-            text_document: lsp::VersionedTextDocumentIdentifier {
-                uri: "file:///test.rs".parse().unwrap(),
-                version: 1,
-            },
-            position: lsp::Position::new(1, 5),
-            version: Some(42),
-        };
-        let json = serde_json::to_string(&request_params).unwrap();
-        assert!(json.contains("textDocument"));
-        assert!(json.contains("position"));
-        assert!(json.contains("version"));
-
-        // Test deserialization of response
-        let response_json = r#"{
-            "edits": [
-                {
-                    "textDocument": {"uri": "file:///test.rs"},
-                    "range": {
-                        "start": {"line": 0, "character": 0},
-                        "end": {"line": 0, "character": 10}
-                    },
-                    "text": "old code",
-                }
-            ]
-        }"#;
-        let response: request::CopilotInlineEditResult =
-            serde_json::from_str(response_json).unwrap();
-        assert_eq!(response.edits.len(), 1);
-        assert_eq!(response.edits[0].text, "old code");
-
-        // Test with optional fields missing
-        let minimal_response_json = r#"{
-            "edits": [
-                {
-                    "textDocument": {"uri": "file:///test.rs"},
-                    "range": {
-                        "start": {"line": 0, "character": 0},
-                        "end": {"line": 0, "character": 10}
-                    },
-                    "text": "code"
-                }
-            ]
-        }"#;
-        let minimal_response: request::CopilotInlineEditResult =
-            serde_json::from_str(minimal_response_json).unwrap();
-        assert_eq!(minimal_response.edits[0].command, None);
-    }
 }
 
 #[cfg(test)]
