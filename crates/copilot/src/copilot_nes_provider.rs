@@ -102,21 +102,26 @@ impl EditPredictionProvider for CopilotNesProvider {
 
             let result = copilot
                 .update(cx, |copilot, cx| {
-                    copilot.request_inline_edit(&buffer, cursor_position, cx)
+                    copilot.request_edit_suggestion(&buffer, cursor_position, cx)
                 })
                 .ok();
 
             if let Some(task) = result {
-                if let Ok(inline_edit_result) = task.await {
-                    this.update(cx, |this, cx| {
-                        if !inline_edit_result.edits.is_empty() {
-                            this.buffer_id = Some(buffer.entity_id());
-                            this.edits = inline_edit_result.edits;
-                            this.active_edit_index = 0;
-                            cx.notify();
-                        }
-                    })
-                    .ok();
+                match task.await {
+                    Ok(edit_suggestion_result) => {
+                        this.update(cx, |this, cx| {
+                            if !edit_suggestion_result.edits.is_empty() {
+                                this.buffer_id = Some(buffer.entity_id());
+                                this.edits = edit_suggestion_result.edits;
+                                this.active_edit_index = 0;
+                                cx.notify();
+                            }
+                        })
+                        .ok();
+                    }
+                    Err(error) => {
+                        log::warn!("Error requesting next edit suggestion: {error}");
+                    }
                 }
             }
 

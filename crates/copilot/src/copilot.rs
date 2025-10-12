@@ -931,7 +931,7 @@ impl Copilot {
         })
     }
 
-    pub fn request_inline_edit<T>(
+    pub fn request_edit_suggestion<T>(
         &mut self,
         buffer: &Entity<Buffer>,
         position: T,
@@ -1525,7 +1525,6 @@ mod tests {
                                 lsp::Position::new(0, 8),
                             ),
                             text: "fn main()".to_string(),
-                            command: None,
                         }],
                     })
                 }
@@ -1533,7 +1532,7 @@ mod tests {
 
         let result = copilot
             .update(cx, |copilot, cx| {
-                copilot.request_inline_edit(&buffer, PointUtf16::new(0, 0), cx)
+                copilot.request_edit_suggestion(&buffer, PointUtf16::new(0, 0), cx)
             })
             .await
             .unwrap();
